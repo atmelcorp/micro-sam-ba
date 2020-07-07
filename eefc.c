@@ -233,9 +233,13 @@ bool eefc_erase_16pages(int fd, const struct _chip* chip,
 bool eefc_read(int fd, const struct _chip* chip,
 		uint8_t* buffer, uint32_t addr, uint32_t size)
 {
-	if (addr + size > chip->flash_size * 1024)
-		return false;
-
+	if (addr + size > chip->flash_size * 1024){
+		printf("invalid addr/size vs chip size parameter\n");
+		printf("addr/size is %#x\n", (addr + size));
+		printf("chip size is %#x\n", chip->flash_size * 1024);
+		printf("workaround active!!!\n");
+		// return false;
+	}
 	return samba_read(fd, buffer, chip->flash_addr + addr, size);
 }
 
@@ -249,6 +253,8 @@ bool eefc_write(int fd, const struct _chip* chip,
 		uint16_t page = addr / PAGE_SIZE;
 		uint32_t head = addr & (PAGE_SIZE - 1);
 		uint32_t count = MIN(size, PAGE_SIZE - head);
+
+		printf("writing addr %#.8x\n", addr);
 
 		// write to latch buffer
 		// we cannot use the SAM-BA Monitor send command because it
