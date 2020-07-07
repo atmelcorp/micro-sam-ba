@@ -70,7 +70,7 @@ int samba_open(const char* device)
 		return -1;
 	}
 
-	if (!configure_tty(fd, B4000000)) {
+	if (!configure_tty(fd, B115200)) {
 		close(fd);
 		return -1;
 	}
