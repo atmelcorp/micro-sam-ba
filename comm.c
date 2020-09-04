@@ -42,8 +42,8 @@ static bool configure_tty(int fd, int speed)
 	tty.c_cflag |= CS8 | CLOCAL | CREAD;
 	tty.c_lflag = 0;
 	tty.c_oflag = 0;
-	tty.c_cc[VMIN] = 1;
-	tty.c_cc[VTIME] = 5;
+	tty.c_cc[VMIN] = 0;
+	tty.c_cc[VTIME] = 20;
 	tty.c_iflag &= ~(ICRNL | IGNBRK | IXON | IXOFF | IXANY);
 
 	if (tcsetattr(fd, TCSANOW, &tty) != 0) {
