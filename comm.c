@@ -42,8 +42,8 @@ static bool configure_tty(int fd, int speed)
 	tty.c_cflag |= CS8 | CLOCAL | CREAD;
 	tty.c_lflag = 0;
 	tty.c_oflag = 0;
-	tty.c_cc[VMIN] = 1;
-	tty.c_cc[VTIME] = 5;
+	tty.c_cc[VMIN] = 0;
+	tty.c_cc[VTIME] = 20;
 	tty.c_iflag &= ~(ICRNL | IGNBRK | IXON | IXOFF | IXANY);
 
 	if (tcsetattr(fd, TCSANOW, &tty) != 0) {
@@ -57,8 +57,10 @@ static bool configure_tty(int fd, int speed)
 static bool switch_to_binary(int fd)
 {
 	char cmd[] = "N#";
+	printf("start switch to binary\n");
 	if (write(fd, cmd, strlen(cmd)) != strlen(cmd))
 		return false;
+	printf("write done\n");
 	return read(fd, cmd, 2) == 2;
 }
 
@@ -69,17 +71,23 @@ int samba_open(const char* device)
 		perror("Could not open device");
 		return -1;
 	}
+	printf("port open\n");
 
-	if (!configure_tty(fd, B4000000)) {
+	printf("Configuring\n");
+	if (!configure_tty(fd,B115200)) {
+		perror("Could not configure");
 		close(fd);
 		return -1;
 	}
 
+   	printf("switch to binary\n");	
 	if (!switch_to_binary(fd)) {
+		perror("Could not set to binary");
 		close(fd);
 		return -1;
 	}
 
+	printf("finished port open\n");
 	return fd;
 }
 
@@ -108,15 +116,29 @@ bool samba_read(int fd, uint8_t* buffer, uint32_t addr, uint32_t size)
 {
 	char cmd[20];
 	while (size > 0) {
+		printf("reading addr %#x\n", addr);
 		uint32_t count = MIN(size, 1024);
+		printf("count is %d\n", count);
 		// workaround for bug when size is exactly 512
-		if (count == 512)
+		if (count == 512){
+			printf("apply workaround \n");
 			count = 1;
+		}
 		snprintf(cmd, sizeof(cmd), "R%08x,%08x#", addr, count);
-		if (write(fd, cmd, strlen(cmd)) != strlen(cmd))
+		printf("write-cmd is %s \n", cmd);
+		if (write(fd, cmd, strlen(cmd)) != strlen(cmd)){
+			printf("cmd-write failed\n");
 			return false;
-		if (read(fd, buffer, count) != count)
+		} else {
+			printf("cmd-write done\n");
+		}
+		printf("read-cmd start...\n");
+		if (read(fd, buffer, count) != count){
+			printf("cmd-read failed\n");
 			return false;
+		} else {
+			printf("cmd-read done\n");
+		}
 		addr += count;
 		buffer += count;
 		size -= count;

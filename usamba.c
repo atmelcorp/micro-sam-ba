@@ -51,6 +51,7 @@ static bool read_flash(int fd, const struct _chip* chip, uint32_t addr, uint32_t
 	while (total < size) {
 		uint32_t count = MIN(BUFFER_SIZE, size - total);
 		if (!eefc_read(fd, chip, buffer, addr, count)) {
+			fprintf(stderr, "Error while reading from %#x\n", addr);
 			fclose(file);
 			return false;
 		}
@@ -261,9 +262,15 @@ int main(int argc, char *argv[])
 
 	printf("Port: %s\n", port);
 	fd = samba_open(port);
-	if (fd < 0)
+	if (fd < 0){
+		printf(">>>failed to open port\n");
+		fprintf(stderr, "Could not open port\n");
 		return -1;
+	} else {
+		printf(">>>port is open\n");
+	}
 
+	perror("reading chip id");
 	// Identify chip
 	const struct _chip* chip;
 	if (!chipid_identity_serie(fd, &chip)) {
@@ -284,6 +291,7 @@ int main(int argc, char *argv[])
 	switch (command) {
 		case CMD_READ:
 		{
+			printf("CMD: READ\n");
 			printf("Reading %d bytes at 0x%08x to file '%s'\n", size, addr, filename);
 			if (read_flash(fd, chip, addr, size, filename)) {
 				err = false;
@@ -293,6 +301,7 @@ int main(int argc, char *argv[])
 
 		case CMD_WRITE:
 		{
+			printf("CMD: WRITE\n");
 			if (get_file_size(filename, &size)) {
 				printf("Unlocking %d bytes at 0x%08x\n", size, addr);
 				if (eefc_unlock(fd, chip, &locks, addr, size)) {
@@ -307,6 +316,7 @@ int main(int argc, char *argv[])
 
 		case CMD_VERIFY:
 		{
+			printf("CMD: VERIFY\n");
 			if (get_file_size(filename, &size)) {
 				printf("Verifying %d bytes at 0x%08x with file '%s'\n", size, addr, filename);
 				if (verify_flash(fd, chip, filename, addr, size)) {
@@ -318,6 +328,7 @@ int main(int argc, char *argv[])
 
 		case CMD_ERASE_ALL:
 		{
+			printf("CMD: ERASE_ALL\n");
 			printf("Unlocking all pages\n");
 			if (eefc_unlock(fd, chip, &locks, 0, chip->flash_size * 1024)) {
 				printf("Erasing all pages\n");
