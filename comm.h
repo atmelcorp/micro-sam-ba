@@ -17,28 +17,18 @@
 #include <stdbool.h>
 #include <stdint.h>
 
-#if defined(_MSC_VER)
-#define WINDOWS_LEAN_AND_MEAN
-#include <windows.h>
-#endif
+#include "common_types.h"
 
-#if defined(_MSC_VER)
-typedef HANDLE handle_t;
-#else
-typedef int handle_t;
-#define INVALID_HANDLE_VALUE -1
-#endif
+extern serial_port_handle_t samba_open(const char* device);
 
-extern handle_t samba_open(const char* device);
+extern void samba_close(serial_port_handle_t fd);
 
-extern void samba_close(handle_t fd);
+extern bool samba_read_word(serial_port_handle_t fd, uint32_t addr, uint32_t* value);
 
-extern bool samba_read_word(handle_t fd, uint32_t addr, uint32_t* value);
+extern bool samba_write_word(serial_port_handle_t fd, uint32_t addr, uint32_t value);
 
-extern bool samba_write_word(handle_t fd, uint32_t addr, uint32_t value);
+extern bool samba_read(serial_port_handle_t fd, uint8_t* buffer, uint32_t addr, uint32_t size);
 
-extern bool samba_read(handle_t fd, uint8_t* buffer, uint32_t addr, uint32_t size);
-
-extern bool samba_write(handle_t fd, uint8_t* buffer, uint32_t addr, uint32_t size);
+extern bool samba_write(serial_port_handle_t fd, uint8_t* buffer, uint32_t addr, uint32_t size);
 
 #endif /* COMM_H_ */

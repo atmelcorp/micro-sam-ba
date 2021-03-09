@@ -45,7 +45,7 @@
 #define EEFC_FSR_FLOCKE (1 << 2)
 #define EEFC_FSR_FLERR  (1 << 3)
 
-static bool eefc_wait_ready(int fd, const struct _chip* chip, uint32_t* status)
+static bool eefc_wait_ready(serial_port_handle_t fd, const struct _chip* chip, uint32_t* status)
 {
 	uint32_t value;
 	do {
@@ -57,12 +57,12 @@ static bool eefc_wait_ready(int fd, const struct _chip* chip, uint32_t* status)
 	return true;
 }
 
-static bool eefc_read_result(int fd, const struct _chip* chip, uint32_t* result)
+static bool eefc_read_result(serial_port_handle_t fd, const struct _chip* chip, uint32_t* result)
 {
 	return samba_read_word(fd, chip->eefc_base + EEFC_FRR, result);
 }
 
-static bool eefc_send_command(int fd, const struct _chip* chip, uint8_t cmd,
+static bool eefc_send_command(serial_port_handle_t fd, const struct _chip* chip, uint8_t cmd,
 		uint16_t arg, uint32_t* status)
 {
 	if (!samba_write_word(fd, chip->eefc_base + EEFC_FCR,
@@ -75,7 +75,7 @@ static bool eefc_send_command(int fd, const struct _chip* chip, uint8_t cmd,
 	return true;
 }
 
-bool eefc_read_flash_info(int fd, const struct _chip* chip,
+bool eefc_read_flash_info(serial_port_handle_t fd, const struct _chip* chip,
 		struct _eefc_locks* locks)
 {
 	// send GETD command
@@ -127,7 +127,7 @@ bool eefc_read_flash_info(int fd, const struct _chip* chip,
 	return true;
 }
 
-static bool set_page_lock(int fd, const struct _chip* chip,
+static bool set_page_lock(serial_port_handle_t fd, const struct _chip* chip,
 		const struct _eefc_locks* locks, uint32_t lock, bool enable)
 {
 	if (lock > locks->count)
@@ -137,24 +137,28 @@ static bool set_page_lock(int fd, const struct _chip* chip,
 	return eefc_send_command(fd, chip, cmd, lock, NULL);
 }
 
-bool eefc_lock_page(int fd, const struct _chip* chip,
+bool eefc_lock_page(serial_port_handle_t fd, const struct _chip* chip,
 		const struct _eefc_locks* locks, uint32_t lock)
 {
 	return set_page_lock(fd, chip, locks, lock, true);
 }
 
-bool eefc_unlock_page(int fd, const struct _chip* chip,
+bool eefc_unlock_page(serial_port_handle_t fd, const struct _chip* chip,
 		const struct _eefc_locks* locks, uint32_t lock)
 {
 	return set_page_lock(fd, chip, locks, lock, false);
 }
 
-static bool set_lock(int fd, const struct _chip* chip,
+static bool set_lock(serial_port_handle_t fd, const struct _chip* chip,
 		const struct _eefc_locks* locks, uint32_t addr, uint32_t size,
 		bool enable)
 {
 	if (addr + size > chip->flash_size * 1024)
+	{
+		fprintf(stderr, "Range 0x%08X to 0x%08X out of range for internal flash size (0x%08X).\r\n",
+			addr, addr + size, chip->flash_size * 1024);
 		return false;
+	}
 
 	uint32_t addr_end = addr + size;
 
@@ -173,19 +177,19 @@ static bool set_lock(int fd, const struct _chip* chip,
 	return false;
 }
 
-bool eefc_lock(int fd, const struct _chip* chip,
+bool eefc_lock(serial_port_handle_t fd, const struct _chip* chip,
 		const struct _eefc_locks* locks, uint32_t addr, uint32_t size)
 {
 	return set_lock(fd, chip, locks, addr, size, true);
 }
 
-bool eefc_unlock(int fd, const struct _chip* chip,
+bool eefc_unlock(serial_port_handle_t fd, const struct _chip* chip,
 		const struct _eefc_locks* locks, uint32_t addr, uint32_t size)
 {
 	return set_lock(fd, chip, locks, addr, size, false);
 }
 
-bool eefc_erase_all(int fd, const struct _chip* chip)
+bool eefc_erase_all(serial_port_handle_t fd, const struct _chip* chip)
 {
 	// send erase all command to flash controller
 	uint32_t status;
@@ -202,7 +206,7 @@ bool eefc_erase_all(int fd, const struct _chip* chip)
 	return true;
 }
 
-bool eefc_erase_16pages(int fd, const struct _chip* chip,
+bool eefc_erase_16pages(serial_port_handle_t fd, const struct _chip* chip,
 		uint32_t first_page)
 {
 	uint32_t arg;
@@ -230,20 +234,28 @@ bool eefc_erase_16pages(int fd, const struct _chip* chip,
 	return true;
 }
 
-bool eefc_read(int fd, const struct _chip* chip,
+bool eefc_read(serial_port_handle_t fd, const struct _chip* chip,
 		uint8_t* buffer, uint32_t addr, uint32_t size)
 {
 	if (addr + size > chip->flash_size * 1024)
+	{
+		fprintf(stderr, "Range 0x%08X to 0x%08X out of range for internal flash size (0x%08X).\r\n",
+			addr, addr + size, chip->flash_size * 1024);
 		return false;
+	}
 
 	return samba_read(fd, buffer, chip->flash_addr + addr, size);
 }
 
-bool eefc_write(int fd, const struct _chip* chip,
+bool eefc_write(serial_port_handle_t fd, const struct _chip* chip,
 		uint8_t* buffer, uint32_t addr, uint32_t size)
 {
 	if (addr + size > chip->flash_size * 1024)
+	{
+		fprintf(stderr, "Range 0x%08X to 0x%08X out of range for internal flash size (0x%08X).\r\n",
+			addr, addr + size, chip->flash_size * 1024);
 		return false;
+	}
 
 	while (size > 0) {
 		uint16_t page = addr / PAGE_SIZE;
@@ -279,7 +291,7 @@ bool eefc_write(int fd, const struct _chip* chip,
 	return true;
 }
 
-extern bool eefc_get_gpnvm(int fd, const struct _chip* chip,
+extern bool eefc_get_gpnvm(serial_port_handle_t fd, const struct _chip* chip,
 		uint8_t gpnvm, bool* value)
 {
 	if (gpnvm >= chip->gpnvm) {
@@ -304,7 +316,7 @@ extern bool eefc_get_gpnvm(int fd, const struct _chip* chip,
 	return true;
 }
 
-extern bool eefc_set_gpnvm(int fd, const struct _chip* chip, uint8_t gpnvm)
+extern bool eefc_set_gpnvm(serial_port_handle_t fd, const struct _chip* chip, uint8_t gpnvm)
 {
 	if (gpnvm >= chip->gpnvm) {
 		fprintf(stderr, "Set GPNVM%d error: invalid GPNVM\n", gpnvm);
@@ -326,7 +338,7 @@ extern bool eefc_set_gpnvm(int fd, const struct _chip* chip, uint8_t gpnvm)
 	return true;
 }
 
-extern bool eefc_clear_gpnvm(int fd, const struct _chip* chip, uint8_t gpnvm)
+extern bool eefc_clear_gpnvm(serial_port_handle_t fd, const struct _chip* chip, uint8_t gpnvm)
 {
 	if (gpnvm >= chip->gpnvm) {
 		fprintf(stderr, "Clear GPNVM%d error: invalid GPNVM\n", gpnvm);

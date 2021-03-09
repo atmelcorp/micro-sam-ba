@@ -20,7 +20,7 @@ set(SOURCES
     "eefc.c" "eefc.h"
     "utils.h"
     "usamba.c" 
-)
+ "common_types.h")
 
 add_executable(${PROJECT_NAME} ${SOURCES})
 

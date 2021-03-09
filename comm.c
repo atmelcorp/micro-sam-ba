@@ -93,7 +93,7 @@ static bool configure_tty(int fd, int speed)
    return true;
 }
 #else
-static bool configure_tty(handle_t handle, int speed)
+static bool configure_tty(serial_port_handle_t handle, int speed)
 {
    DCB dcb;
 
@@ -137,7 +137,7 @@ static bool configure_tty(handle_t handle, int speed)
 }
 #endif
 
-static bool switch_to_binary(handle_t fd)
+static bool switch_to_binary(serial_port_handle_t fd)
 {
    char cmd[] = "N#";
    if (write(fd, cmd, strlen(cmd)) != strlen(cmd))
@@ -145,7 +145,7 @@ static bool switch_to_binary(handle_t fd)
    return read(fd, cmd, 2) == 2;
 }
 
-handle_t samba_open(const char* device)
+serial_port_handle_t samba_open(const char* device)
 {
 #if !defined(_MSC_VER)
    int fd = open(device, O_RDWR | O_NOCTTY | O_SYNC);
@@ -179,12 +179,12 @@ handle_t samba_open(const char* device)
    return fd;
 }
 
-void samba_close(handle_t fd)
+void samba_close(serial_port_handle_t fd)
 {
    close(fd);
 }
 
-bool samba_read_word(handle_t fd, uint32_t addr, uint32_t* value)
+bool samba_read_word(serial_port_handle_t fd, uint32_t addr, uint32_t* value)
 {
    char cmd[12];
    snprintf(cmd, sizeof(cmd), "w%08x,#", addr);
@@ -193,14 +193,14 @@ bool samba_read_word(handle_t fd, uint32_t addr, uint32_t* value)
    return read(fd, value, 4) == 4;
 }
 
-bool samba_write_word(handle_t fd, uint32_t addr, uint32_t value)
+bool samba_write_word(serial_port_handle_t fd, uint32_t addr, uint32_t value)
 {
    char cmd[20];
    snprintf(cmd, sizeof(cmd), "W%08x,%08x#", addr, value);
    return write(fd, cmd, strlen(cmd)) == strlen(cmd);
 }
 
-bool samba_read(handle_t fd, uint8_t* buffer, uint32_t addr, uint32_t size)
+bool samba_read(serial_port_handle_t fd, uint8_t* buffer, uint32_t addr, uint32_t size)
 {
    char cmd[20];
    while (size > 0) {
@@ -220,7 +220,7 @@ bool samba_read(handle_t fd, uint8_t* buffer, uint32_t addr, uint32_t size)
    return true;
 }
 
-bool samba_write(handle_t fd, uint8_t* buffer, uint32_t addr, uint32_t size)
+bool samba_write(serial_port_handle_t fd, uint8_t* buffer, uint32_t addr, uint32_t size)
 {
    char cmd[20];
    while (size > 0) {

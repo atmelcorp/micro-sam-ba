@@ -71,7 +71,7 @@ const struct _chip_serie* chipid_get_serie(const char* name)
 	return NULL;
 }
 
-bool chipid_check_serie(int fd, const struct _chip_serie* serie, const struct _chip** chip)
+bool chipid_check_serie(serial_port_handle_t fd, const struct _chip_serie* serie, const struct _chip** chip)
 {
 	// Read chip identifiers (CIDR/EXID)
 	uint32_t cidr, exid;
@@ -91,7 +91,7 @@ bool chipid_check_serie(int fd, const struct _chip_serie* serie, const struct _c
 	return false;
 }
 
-const struct _chip_serie* chipid_identity_serie(int fd, const struct _chip** chip)
+const struct _chip_serie* chipid_identity_serie(serial_port_handle_t fd, const struct _chip** chip)
 {
 	for (int i = 0; i < ARRAY_SIZE(_chip_series); i++)
 		if (chipid_check_serie(fd, &_chip_series[i], chip))
