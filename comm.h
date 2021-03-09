@@ -17,16 +17,28 @@
 #include <stdbool.h>
 #include <stdint.h>
 
-extern int samba_open(const char* device);
+#if defined(_MSC_VER)
+#define WINDOWS_LEAN_AND_MEAN
+#include <windows.h>
+#endif
 
-extern void samba_close(int fd);
+#if defined(_MSC_VER)
+typedef HANDLE handle_t;
+#else
+typedef int handle_t;
+#define INVALID_HANDLE_VALUE -1
+#endif
 
-extern bool samba_read_word(int fd, uint32_t addr, uint32_t* value);
+extern handle_t samba_open(const char* device);
 
-extern bool samba_write_word(int fd, uint32_t addr, uint32_t value);
+extern void samba_close(handle_t fd);
 
-extern bool samba_read(int fd, uint8_t* buffer, uint32_t addr, uint32_t size);
+extern bool samba_read_word(handle_t fd, uint32_t addr, uint32_t* value);
 
-extern bool samba_write(int fd, uint8_t* buffer, uint32_t addr, uint32_t size);
+extern bool samba_write_word(handle_t fd, uint32_t addr, uint32_t value);
+
+extern bool samba_read(handle_t fd, uint8_t* buffer, uint32_t addr, uint32_t size);
+
+extern bool samba_write(handle_t fd, uint8_t* buffer, uint32_t addr, uint32_t size);
 
 #endif /* COMM_H_ */
