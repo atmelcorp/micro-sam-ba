@@ -4,4 +4,4 @@ GTAGS
 *.o
 *~
 /.vs
-/out/build/x64-Debug
+/out
