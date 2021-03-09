@@ -54,6 +54,8 @@ int write(HANDLE fd, const void* buf, size_t len)
    if (!ok)
       return -1;
 
+   FlushFileBuffers(fd);
+
    return (int)num_written;
 }
 #endif
