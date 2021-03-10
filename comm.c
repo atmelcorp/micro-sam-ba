@@ -17,15 +17,12 @@
 #include <fcntl.h>
 #include <stdio.h>
 #include <string.h>
-#if !defined(_MSC_VER) && !defined(__MINGW32__)
+#if !defined(_MSC_VER)
 #include <termios.h>
 #include <unistd.h>
 #else
 #define O_NOCTTY 0
 #define O_SYNC 0
-#if !defined(B4000000)
-#define B4000000 0
-#endif
 #endif
 
 #include "comm.h"
@@ -34,6 +31,7 @@
 
 #if defined(_MSC_VER)
 #define close(fd) CloseHandle(fd)
+#define B115200 CBR_115200
 
 int read(HANDLE fd, void* buf, size_t len)
 {
@@ -60,7 +58,7 @@ int write(HANDLE fd, const void* buf, size_t len)
 }
 #endif
 
-#if !defined(_MSC_VER) && !defined(__MINGW32__)
+#if !defined(_MSC_VER)
 static bool configure_tty(int fd, int speed)
 {
    struct termios tty;
@@ -106,7 +104,7 @@ static bool configure_tty(serial_port_handle_t handle, int speed)
    }
 
    dcb.DCBlength = sizeof(dcb);
-   dcb.BaudRate = CBR_115200;
+   dcb.BaudRate = speed;
    dcb.fBinary = 1;
    dcb.fParity = false;
    dcb.fOutxCtsFlow = false;
@@ -164,7 +162,7 @@ serial_port_handle_t samba_open(const char* device)
    }
 #endif
 
-   if (!configure_tty(fd, B4000000))
+   if (!configure_tty(fd, B115200))
    {
       close(fd);
       return INVALID_HANDLE_VALUE;
