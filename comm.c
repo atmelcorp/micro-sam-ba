@@ -56,6 +56,31 @@ int write(HANDLE fd, const void* buf, size_t len)
 
    return (int)num_written;
 }
+
+void print_windows_error(const char *message)
+{
+   // Retrieve the system error message for the last-error code
+
+   LPVOID lpMsgBuf;
+   DWORD dw = GetLastError();
+
+   FormatMessage(
+      FORMAT_MESSAGE_ALLOCATE_BUFFER |
+      FORMAT_MESSAGE_FROM_SYSTEM |
+      FORMAT_MESSAGE_IGNORE_INSERTS,
+      NULL,
+      dw,
+      MAKELANGID(LANG_NEUTRAL, SUBLANG_DEFAULT),
+      (LPTSTR)&lpMsgBuf,
+      0, NULL);
+
+   // Display the error message and exit the process
+
+   fprintf(stderr, message, dw, lpMsgBuf);
+
+   LocalFree(lpMsgBuf);
+}
+
 #endif
 
 #if !defined(_MSC_VER)
@@ -96,6 +121,7 @@ static bool configure_tty(serial_port_handle_t handle, int speed)
    DCB dcb;
 
    memset(&dcb, 0, sizeof(dcb));
+   dcb.DCBlength = sizeof(dcb);
 
    if (!GetCommState(handle, &dcb))
    {
@@ -103,7 +129,6 @@ static bool configure_tty(serial_port_handle_t handle, int speed)
       return false;
    }
 
-   dcb.DCBlength = sizeof(dcb);
    dcb.BaudRate = speed;
    dcb.fBinary = 1;
    dcb.fParity = false;
@@ -118,16 +143,13 @@ static bool configure_tty(serial_port_handle_t handle, int speed)
    dcb.fNull = false;
    dcb.fRtsControl = RTS_CONTROL_ENABLE;
    dcb.fAbortOnError = false;
-   dcb.XonLim = 9999;
-   dcb.XoffLim = 0;
    dcb.ByteSize = 8;
    dcb.Parity = NOPARITY;
    dcb.StopBits = ONESTOPBIT;
-   dcb.XonChar = 0x7F;
 
    if (!SetCommState(handle, &dcb))
    {
-      fprintf(stderr, "Failed to set comm state\r\n");
+      print_windows_error("Failed to set comm state: (%d) %s\r\n");
       return false;
    }
 
