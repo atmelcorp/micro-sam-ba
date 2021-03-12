@@ -18,6 +18,8 @@
 #include "eefc.h"
 #include "utils.h"
 
+#define USE_WORD_READ
+
 #define PAGE_SIZE 512
 
 #define EEFC_FMR  0x00000000
@@ -244,7 +246,20 @@ bool eefc_read(serial_port_handle_t fd, const struct _chip* chip,
 		return false;
 	}
 
+#if defined(USE_WORD_READ)
+	uint32_t val;
+	for (uint32_t a = chip->flash_addr + addr; a < chip->flash_addr + addr + size; a += 4)
+	{
+		if (!samba_read_word(fd, a, &val))
+			return false;
+		memcpy(buffer, &val, sizeof(uint32_t));
+		buffer += 4;
+	}
+
+	return true;
+#else
 	return samba_read(fd, buffer, chip->flash_addr + addr, size);
+#endif
 }
 
 bool eefc_write(serial_port_handle_t fd, const struct _chip* chip,
