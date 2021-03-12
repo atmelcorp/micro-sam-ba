@@ -17,16 +17,18 @@
 #include <stdbool.h>
 #include <stdint.h>
 
-extern int samba_open(const char* device);
+#include "common_types.h"
 
-extern void samba_close(int fd);
+extern serial_port_handle_t samba_open(const char* device);
 
-extern bool samba_read_word(int fd, uint32_t addr, uint32_t* value);
+extern void samba_close(serial_port_handle_t fd);
 
-extern bool samba_write_word(int fd, uint32_t addr, uint32_t value);
+extern bool samba_read_word(serial_port_handle_t fd, uint32_t addr, uint32_t* value);
 
-extern bool samba_read(int fd, uint8_t* buffer, uint32_t addr, uint32_t size);
+extern bool samba_write_word(serial_port_handle_t fd, uint32_t addr, uint32_t value);
 
-extern bool samba_write(int fd, uint8_t* buffer, uint32_t addr, uint32_t size);
+extern bool samba_read(serial_port_handle_t fd, uint8_t* buffer, uint32_t addr, uint32_t size);
+
+extern bool samba_write(serial_port_handle_t fd, uint8_t* buffer, uint32_t addr, uint32_t size);
 
 #endif /* COMM_H_ */

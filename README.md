@@ -1,5 +1,5 @@
 Micro SAM-BA
-------------
+============
 
 # Description
 
@@ -40,3 +40,8 @@ for all commands:
          example ``/dev/ttyACM0``.
     ``<start-address>`` and ``<size>`` can be specified in decimal, hexadecimal (if
          prefixed by ``0x``) or octal (if prefixed by ``0``).
+
+# Platforms
+This version now also supports both Linux and Windows
+
+[![CMake](https://github.com/Rob-McKay/micro-sam-ba/actions/workflows/cmake.yml/badge.svg)](https://github.com/Rob-McKay/micro-sam-ba/actions/workflows/cmake.yml)

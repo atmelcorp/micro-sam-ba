@@ -18,6 +18,7 @@
 
 static const struct _chip _chips_samx7[] = {
 	{ "SAME70Q21", 0xa1020e00, 0x00000002, 0x400e0c00, 0x00400000, 2048, 9 },
+	{ "SAME70Q21B", 0xa1020e01, 0x00000002, 0x400e0c00, 0x00400000, 2048, 9 },
 	{ "SAME70Q20", 0xa1020c00, 0x00000002, 0x400e0c00, 0x00400000, 1024, 9 },
 	{ "SAME70Q19", 0xa10d0a00, 0x00000002, 0x400e0c00, 0x00400000,  512, 9 },
 	{ "SAME70N21", 0xa1020e00, 0x00000001, 0x400e0c00, 0x00400000, 2048, 9 },
@@ -27,6 +28,8 @@ static const struct _chip _chips_samx7[] = {
 	{ "SAME70J20", 0xa1020c00, 0x00000000, 0x400e0c00, 0x00400000, 1024, 9 },
 	{ "SAME70J19", 0xa10d0a00, 0x00000000, 0x400e0c00, 0x00400000,  512, 9 },
 	{ "SAMS70Q21", 0xa1120e00, 0x00000002, 0x400e0c00, 0x00400000, 2048, 9 },
+	{ "SAMS70N21A", 0xa1120e00, 0x00000001, 0x400e0c00, 0x00400000, 2048, 9 },
+	{ "SAMS70N21B", 0xa1120e01, 0x00000001, 0x400e0c00, 0x00400000, 2048, 9 },
 	{ "SAMS70Q20", 0xa1120c00, 0x00000002, 0x400e0c00, 0x00400000, 1024, 9 },
 	{ "SAMS70Q19", 0xa11d0a00, 0x00000002, 0x400e0c00, 0x00400000,  512, 9 },
 	{ "SAMS70N21", 0xa1120e00, 0x00000001, 0x400e0c00, 0x00400000, 2048, 9 },
@@ -70,7 +73,7 @@ const struct _chip_serie* chipid_get_serie(const char* name)
 	return NULL;
 }
 
-bool chipid_check_serie(int fd, const struct _chip_serie* serie, const struct _chip** chip)
+bool chipid_check_serie(serial_port_handle_t fd, const struct _chip_serie* serie, const struct _chip** chip)
 {
 	// Read chip identifiers (CIDR/EXID)
 	uint32_t cidr, exid;
@@ -90,7 +93,7 @@ bool chipid_check_serie(int fd, const struct _chip_serie* serie, const struct _c
 	return false;
 }
 
-const struct _chip_serie* chipid_identity_serie(int fd, const struct _chip** chip)
+const struct _chip_serie* chipid_identity_serie(serial_port_handle_t fd, const struct _chip** chip)
 {
 	for (int i = 0; i < ARRAY_SIZE(_chip_series); i++)
 		if (chipid_check_serie(fd, &_chip_series[i], chip))

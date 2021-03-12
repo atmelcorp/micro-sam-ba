@@ -17,6 +17,8 @@
 #include <stdbool.h>
 #include <stdint.h>
 
+#include "common_types.h"
+
 struct _chip {
 	const char* name;
 	uint32_t    cidr;
@@ -37,8 +39,8 @@ struct _chip_serie {
 
 extern const struct _chip_serie* chipid_get_serie(const char* name);
 
-extern bool chipid_check_serie(int fd, const struct _chip_serie* serie, const struct _chip** chip);
+extern bool chipid_check_serie(serial_port_handle_t fd, const struct _chip_serie* serie, const struct _chip** chip);
 
-extern const struct _chip_serie* chipid_identity_serie(int fd, const struct _chip** chip);
+extern const struct _chip_serie* chipid_identity_serie(serial_port_handle_t fd, const struct _chip** chip);
 
 #endif /* CHIPID_H_ */
