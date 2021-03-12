@@ -43,3 +43,5 @@ for all commands:
 
 # Platforms
 This version now also supports both Linux and Windows
+
+[![CMake](https://github.com/Rob-McKay/micro-sam-ba/actions/workflows/cmake.yml/badge.svg)](https://github.com/Rob-McKay/micro-sam-ba/actions/workflows/cmake.yml)
