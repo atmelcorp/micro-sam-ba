@@ -81,7 +81,11 @@ bool chipid_check_serie(int fd, const struct _chip_serie* serie, const struct _c
 
 	// Identify chip and read its flash infos
 	for (int i = 0; i < serie->nb_chips; i++) {
-		if (serie->chips[i].cidr == cidr && serie->chips[i].exid == exid) {
+		if (serie->chips[i].cidr == (cidr & 0xFFFFFFF0) && serie->chips[i].exid == exid) {
+                /* Note: Last nibble identifies MRL devices
+                 *       1.1.1.x = 0 for MRL A devices.
+                 *       1.1.2.x = 1 for MRL B devices.
+                 */
 			*chip = &serie->chips[i];
 			return true;
 		}
