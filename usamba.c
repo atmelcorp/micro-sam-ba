@@ -1,4 +1,12 @@
-/*
+/* SPDX-License-Identifier: GPL-2.0
+ *
+ * Micro SAM-BA - in system programmer for Atmel SAME70/S70/V70/V71 devices
+ *
+ * Copyright (c) 2021, Patrick Menschel <menschel.p@posteo.de>
+ * - modified for use with MRL B devices, tested on SAMV71N21
+ *
+ * Based on:
+ *
  * Copyright (c) 2015-2016, Atmel Corporation.
  *
  * This program is free software; you can redistribute it and/or modify it
