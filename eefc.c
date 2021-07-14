@@ -1,4 +1,5 @@
-/*
+/* SPDX-License-Identifier: GPL-2.0
+ *
  * Copyright (c) 2015-2016, Atmel Corporation.
  *
  * This program is free software; you can redistribute it and/or modify it
