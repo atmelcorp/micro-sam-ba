@@ -93,7 +93,7 @@ bool eefc_read_flash_info(serial_port_handle_t fd, const struct _chip* chip,
 	uint32_t flash_size;
 	if (!eefc_read_result(fd, chip, &flash_size))
 		return false;
-	if (flash_size != chip->flash_size * 1024) {
+	if (flash_size < chip->flash_size * 1024) {
 		fprintf(stderr, "Invalid flash size: detected %d bytes but expected %d bytes\n",
 				flash_size, chip->flash_size * 1024);
 		return false;

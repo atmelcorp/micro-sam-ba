@@ -27,12 +27,14 @@ struct _chip {
 	uint32_t    flash_addr;
 	uint32_t    flash_size;
 	uint8_t     gpnvm;
+	uint32_t	rstccr;
 };
 
 struct _chip_serie {
 	const char*         name;
 	uint32_t            cidr_reg;
 	uint32_t            exid_reg;
+	uint32_t			rstccr_reg;
 	uint32_t            nb_chips;
 	const struct _chip* chips;
 };
