@@ -54,12 +54,24 @@ static bool configure_tty(int fd, int speed)
 	return true;
 }
 
+static int _read(int fd, void *buf, size_t count) {
+	int ret = 0;
+	uint8_t *p = (uint8_t *)buf;
+	while (count>0) {
+		int len;
+		len = read(fd, p+ret, count);
+		count -= len;
+		ret += len;
+	}
+	return ret;
+}
+
 static bool switch_to_binary(int fd)
 {
 	char cmd[] = "N#";
 	if (write(fd, cmd, strlen(cmd)) != strlen(cmd))
 		return false;
-	return read(fd, cmd, 2) == 2;
+	return _read(fd, cmd, 2) == 2;
 }
 
 int samba_open(const char* device)
@@ -94,7 +106,7 @@ bool samba_read_word(int fd, uint32_t addr, uint32_t* value)
 	snprintf(cmd, sizeof(cmd), "w%08x,#", addr);
 	if (write(fd, cmd, strlen(cmd)) != strlen(cmd))
 		return false;
-	return read(fd, value, 4) == 4;
+	return _read(fd, value, 4) == 4;
 }
 
 bool samba_write_word(int fd, uint32_t addr, uint32_t value)
@@ -115,7 +127,7 @@ bool samba_read(int fd, uint8_t* buffer, uint32_t addr, uint32_t size)
 		snprintf(cmd, sizeof(cmd), "R%08x,%08x#", addr, count);
 		if (write(fd, cmd, strlen(cmd)) != strlen(cmd))
 			return false;
-		if (read(fd, buffer, count) != count)
+		if (_read(fd, buffer, count) != count)
 			return false;
 		addr += count;
 		buffer += count;
