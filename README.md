@@ -1,5 +1,5 @@
 Micro SAM-BA
-------------
+============
 
 # Description
 
@@ -7,6 +7,7 @@ This simple tool can be used to program the internal flash of the following
 microcontrollers:
 
   - Atmel SAME70/S70/V70/V71
+  - Atmel SAM4E8C/SAM4E8E
 
 Communication with SAM-BA bootloader is only supported through USB.
 
@@ -34,9 +35,17 @@ Usage: ``./usamba <port> (read|write|verify|erase-all|gpnvm) [args]*``
 
 - Get/Set/Clear GPNVM:
     ``./usamba <port> gpnvm (get|set|clear) <gpnvm_number>``
+    
+- Restart MCU
+    ``./usamba <port> restart-mcu``
 
 for all commands:
     ``<port>`` is the USB device node for the SAM-BA bootloader, for
          example ``/dev/ttyACM0``.
     ``<start-address>`` and ``<size>`` can be specified in decimal, hexadecimal (if
          prefixed by ``0x``) or octal (if prefixed by ``0``).
+
+# Platforms
+This version now also supports both Linux and Windows
+
+[![CMake](https://github.com/Grufbert/micro-sam-ba/actions/workflows/cmake.yml/badge.svg)](https://github.com/Grufbert/micro-sam-ba/actions/workflows/cmake.yml)

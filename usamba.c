@@ -17,13 +17,16 @@
 #include <stdio.h>
 #include <stdlib.h>
 #include <string.h>
+#if !defined(_MSC_VER)
 #include <unistd.h>
+#endif
 #include "chipid.h"
 #include "comm.h"
 #include "eefc.h"
 #include "utils.h"
 
-#define BUFFER_SIZE 8192
+//#define BUFFER_SIZE 8192
+#define BUFFER_SIZE 256
 
 static bool get_file_size(const char* filename, uint32_t* size)
 {
@@ -38,7 +41,7 @@ static bool get_file_size(const char* filename, uint32_t* size)
 	return true;
 }
 
-static bool read_flash(int fd, const struct _chip* chip, uint32_t addr, uint32_t size, const char* filename)
+static bool read_flash(serial_port_handle_t fd, const struct _chip* chip, uint32_t addr, uint32_t size, const char* filename)
 {
 	FILE* file = fopen(filename, "wb");
 	if (!file) {
@@ -69,7 +72,7 @@ static bool read_flash(int fd, const struct _chip* chip, uint32_t addr, uint32_t
 	return true;
 }
 
-static bool write_flash(int fd, const struct _chip* chip, const char* filename, uint32_t addr, uint32_t size)
+static bool write_flash(serial_port_handle_t fd, const struct _chip* chip, const char* filename, uint32_t addr, uint32_t size)
 {
 	FILE* file = fopen(filename, "rb");
 	if (!file) {
@@ -87,6 +90,7 @@ static bool write_flash(int fd, const struct _chip* chip, const char* filename, 
 			return false;
 		}
 
+		printf("Writing flash address 0x%08X to 0x%08X\r", addr, addr + count);
 		if (!eefc_write(fd, chip, buffer, addr, count)) {
 			fclose(file);
 			return false;
@@ -100,7 +104,7 @@ static bool write_flash(int fd, const struct _chip* chip, const char* filename, 
 	return true;
 }
 
-static bool verify_flash(int fd, const struct _chip* chip, const char* filename, uint32_t addr, uint32_t size)
+static bool verify_flash(serial_port_handle_t fd, const struct _chip* chip, const char* filename, uint32_t addr, uint32_t size)
 {
 	FILE* file = fopen(filename, "rb");
 	if (!file) {
@@ -113,11 +117,16 @@ static bool verify_flash(int fd, const struct _chip* chip, const char* filename,
 	uint32_t total = 0;
 	while (total < size) {
 		uint32_t count = MIN(BUFFER_SIZE, size - total);
+
+		printf("Reading file offset %d to %d\r", total, total + count);
+
 		if (fread(buffer1, 1, count, file) != count) {
 			fprintf(stderr, "Error while reading from '%s'", filename);
 			fclose(file);
 			return false;
 		}
+
+		printf("Reading flash address 0x%08X to 0x%08X\r", addr, addr + count);
 
 		if (!eefc_read(fd, chip, buffer2, addr, count)) {
 			fclose(file);
@@ -126,15 +135,22 @@ static bool verify_flash(int fd, const struct _chip* chip, const char* filename,
 
 		for (int i = 0; i < BUFFER_SIZE; i++) {
 			if (buffer1[i] != buffer2[i]) {
-				fprintf(stderr, "Verify failed, first difference at offset %d", addr + i);
+				fprintf(stderr, "\r\n** Verify failed, first difference at offset %d **\r\n\r\n", addr + i);
 				fclose(file);
 				return false;
+			}
+
+			if ((i % 256) == 0)
+			{
+				printf("Checking offset %d                                  \r", total);
 			}
 		}
 
 		total += count;
 		addr += count;
 	}
+
+	printf("                              \r");
 
 	fclose(file);
 	return true;
@@ -159,6 +175,9 @@ static void usage(char* prog)
 	printf("- Getting/Setting/Clearing GPNVM:\n");
 	printf("    %s <port> gpnvm (get|set|clear) <gpnvm_number>\n", prog);
 	printf("\n");
+	printf("- Restart MCU:\n");
+	printf("    %s <port> restart-mcu\n", prog);
+	printf("\n");
 	printf("for all commands:\n");
 	printf("    <port> is the USB device node for the SAM-BA bootloader, for\n");
 	printf("         example '/dev/ttyACM0'\n");
@@ -174,11 +193,13 @@ enum {
 	CMD_GPNVM_GET = 5,
 	CMD_GPNVM_SET = 6,
 	CMD_GPNVM_CLEAR = 7,
+	CMD_UNLOCK_ALL = 8,
+	CMD_RESTART_MCU = 9,
 };
 
 int main(int argc, char *argv[])
 {
-	int fd = -1;
+	serial_port_handle_t fd = INVALID_HANDLE_VALUE;
 	int command = 0;
 	char* port = NULL;
 	char* filename = NULL;
@@ -190,7 +211,7 @@ int main(int argc, char *argv[])
 	if (argc < 3) {
 		fprintf(stderr, "Error: not enough arguments\n");
 		usage(argv[0]);
-		return -1;
+		return EXIT_FAILURE;
 	}
 	port = argv[1];
 	char* cmd_text = argv[2];
@@ -229,7 +250,22 @@ int main(int argc, char *argv[])
 		} else {
 			fprintf(stderr, "Error: invalid number of arguments\n");
 		}
-	} else if (!strcmp(cmd_text, "gpnvm")) {
+	} else if (!strcmp(cmd_text, "unlock-all")) {
+		if (argc == 3) {
+			command = CMD_UNLOCK_ALL;
+			err = false;
+		} else {
+			fprintf(stderr, "Error: invalid number of arguments\n");
+		}
+	} else if (!strcmp(cmd_text, "restart-mcu")) {
+		if (argc == 3) {
+			command = CMD_RESTART_MCU;
+			err = false;
+		}
+		else {
+			fprintf(stderr, "Error: invalid number of arguments\n");
+		}
+	}else if (!strcmp(cmd_text, "gpnvm")) {
 		if (argc == 5) {
 			if (!strcmp(argv[3], "get")) {
 				command = CMD_GPNVM_GET;
@@ -254,19 +290,21 @@ int main(int argc, char *argv[])
 	}
 	if (err) {
 		usage(argv[0]);
-		return -1;
+		return EXIT_FAILURE;
 	}
 
 	err = true;
 
 	printf("Port: %s\n", port);
 	fd = samba_open(port);
-	if (fd < 0)
-		return -1;
+	if (fd == INVALID_HANDLE_VALUE)
+		return EXIT_FAILURE;
 
 	// Identify chip
 	const struct _chip* chip;
-	if (!chipid_identity_serie(fd, &chip)) {
+	const struct _chip_serie* serie;
+	serie = chipid_identity_serie(fd, &chip);
+	if (!serie) {
 		fprintf(stderr, "Could not identify chip\n");
 		goto exit;
 	}
@@ -295,7 +333,7 @@ int main(int argc, char *argv[])
 		{
 			if (get_file_size(filename, &size)) {
 				printf("Unlocking %d bytes at 0x%08x\n", size, addr);
-				if (eefc_unlock(fd, chip, &locks, addr, size)) {
+				if (eefc_unlock(fd, chip, &locks, 0, chip->flash_size * 1024)) {
 					printf("Writing %d bytes at 0x%08x from file '%s'\n", size, addr, filename);
 					if (write_flash(fd, chip, filename, addr, size)) {
 						err = false;
@@ -308,7 +346,7 @@ int main(int argc, char *argv[])
 		case CMD_VERIFY:
 		{
 			if (get_file_size(filename, &size)) {
-				printf("Verifying %d bytes at 0x%08x with file '%s'\n", size, addr, filename);
+				printf("Verifying %d bytes at 0x%08x with file '%s' (0x%X)\n", size, addr, filename, size);
 				if (verify_flash(fd, chip, filename, addr, size)) {
 					err = false;
 				}
@@ -325,6 +363,23 @@ int main(int argc, char *argv[])
 					err = false;
 				}
 			}
+			break;
+		}
+
+		case CMD_UNLOCK_ALL:
+		{
+			printf("Unlocking all pages\n");
+			if (eefc_unlock(fd, chip, &locks, 0, chip->flash_size * 1024)) {
+				err = false;
+			}
+			break;
+		}
+
+		case CMD_RESTART_MCU:
+		{
+			printf("Restart MCU\n");
+			samba_write_word(fd, serie->rstccr_reg, chip->rstccr);
+			err = false;
 			break;
 		}
 
@@ -369,8 +424,8 @@ exit:
 	samba_close(fd);
 	if (err) {
 		fprintf(stderr, "Operation failed\n");
-		return -1;
+		return EXIT_FAILURE;
 	} else {
-		return 0;
+		return EXIT_SUCCESS;
 	}
 }
