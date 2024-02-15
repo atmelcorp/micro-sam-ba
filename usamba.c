@@ -295,10 +295,22 @@ int main(int argc, char *argv[])
 
 	err = true;
 
+	char* prefixed_port = malloc(strlen(port) + 5);
 	printf("Port: %s\n", port);
 	fd = samba_open(port);
 	if (fd == INVALID_HANDLE_VALUE)
-		return EXIT_FAILURE;
+	{
+		sprintf(prefixed_port, "\\\\?\\%s", port);
+		port = prefixed_port;
+		printf("Try to fix port with: %s\n", port);
+		fd = samba_open(port);
+		if (fd == INVALID_HANDLE_VALUE)
+		{
+			perror("Unable to open port\n");
+			return EXIT_FAILURE;
+		}
+	}
+	printf("Opened Port: %s\n", port);
 
 	// Identify chip
 	const struct _chip* chip;

@@ -170,7 +170,7 @@ serial_port_handle_t samba_open(const char* device)
 #if !defined(_MSC_VER)
    int fd = open(device, O_RDWR | O_NOCTTY | O_SYNC);
    if (fd < 0) {
-      perror("Could not open device");
+      printf("Could not open device\n");
       return INVALID_HANDLE_VALUE;
    }
 #else
@@ -179,7 +179,7 @@ serial_port_handle_t samba_open(const char* device)
 
    if (fd == INVALID_HANDLE_VALUE)
    {
-      perror("Could not open device");
+      printf("Could not open device\n");
       return INVALID_HANDLE_VALUE;
    }
 #endif
